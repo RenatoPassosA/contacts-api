@@ -1,12 +1,7 @@
 import { AppError } from "../../errors/app-error.js";
 import type { Request, Response, NextFunction } from "express";
 import { createContactSchema, updateContactSchema } from "./schema.js";
-import type {
-  CreateContactUseCase,
-  DeleteContactUseCase,
-  ListContactsUseCase,
-  UpdateContactUseCase,
-} from "./usecases.js";
+import type { ContactUseCase } from "../../application/usecases/usecases.js";
 
 function parseContactId(id: string | string[] | undefined): number {
   if (Array.isArray(id)) {
@@ -23,18 +18,13 @@ function parseContactId(id: string | string[] | undefined): number {
 }
 
 export class ContactController {
-  constructor(
-    private readonly createContactUseCase: CreateContactUseCase,
-    private readonly listContactsUseCase: ListContactsUseCase,
-    private readonly updateContactUseCase: UpdateContactUseCase,
-    private readonly deleteContactUseCase: DeleteContactUseCase
-  ) {}
+  constructor(private readonly contactUseCase: ContactUseCase) {}
 
   create = async (request: Request, response: Response, next: NextFunction) => {
     try {
       const data = createContactSchema.parse(request.body);
 
-      const contact = await this.createContactUseCase.execute(data);
+      const contact = await this.contactUseCase.create(data);
 
       return response.status(201).json(contact);
     } catch (error) {
@@ -44,7 +34,7 @@ export class ContactController {
 
   list = async (request: Request, response: Response, next: NextFunction) => {
     try {
-      const contacts = await this.listContactsUseCase.execute();
+      const contacts = await this.contactUseCase.read();
 
       return response.status(200).json(contacts);
     } catch (error) {
@@ -57,7 +47,7 @@ export class ContactController {
       const id = parseContactId(request.params.id);
       const data = updateContactSchema.parse(request.body);
 
-      const contact = await this.updateContactUseCase.execute(id, data);
+      const contact = await this.contactUseCase.update(id, data);
 
       return response.status(200).json(contact);
     } catch (error) {
@@ -69,7 +59,7 @@ export class ContactController {
     try {
       const id = parseContactId(request.params.id);
 
-      await this.deleteContactUseCase.execute(id);
+      await this.contactUseCase.delete(id);
 
       return response.status(204).send();
     } catch (error) {

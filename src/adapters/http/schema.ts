@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { UpdateContactDto } from "./types.js";
+import type { UpdateContactDto } from "../../domain/types.js";
 
 function isValidFullName(value: string) {
   const words = value.trim().split(/\s+/);

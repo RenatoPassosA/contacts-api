@@ -1,15 +1,16 @@
 import { jest } from "@jest/globals";
+import { DatabaseError } from "../errors/database-error.js";
 
 const mockExecute = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 
-jest.unstable_mockModule("../config/database.js", () => ({
+jest.unstable_mockModule("../infra/mysql/database.js", () => ({
   database: {
     execute: mockExecute,
   },
 }));
 
 const { MySqlContactRepository } = await import(
-  "../modules/contacts/mysql.repository.impl.js"
+  "../infra/mysql/mysql.repository.impl.js"
 );
 
 const mockRow = {
@@ -96,6 +97,18 @@ describe("MySqlContactRepository", () => {
 
       expect(result?.nome).toBe("João Santos");
     });
+
+    it("retorna null quando contato não existe", async () => {
+      mockExecute
+        .mockResolvedValueOnce([{ affectedRows: 0 }])
+        .mockResolvedValueOnce([[]]);
+
+      const result = await repository.update(99, {
+        nome: "João Santos",
+      });
+
+      expect(result).toBeNull();
+    });
   });
 
   describe("delete", () => {
@@ -113,6 +126,14 @@ describe("MySqlContactRepository", () => {
       const result = await repository.delete(99);
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe("database errors", () => {
+    it("lança DatabaseError quando ocorre erro no banco", async () => {
+      mockExecute.mockRejectedValueOnce(new Error("MySQL connection error"));
+
+      await expect(repository.findAll()).rejects.toBeInstanceOf(DatabaseError);
     });
   });
 });

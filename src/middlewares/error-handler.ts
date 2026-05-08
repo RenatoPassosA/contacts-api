@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../errors/app-error.js";
+import { DatabaseError } from "../errors/database-error.js";
 
 export function errorHandler(
   error: unknown,
@@ -17,6 +18,12 @@ export function errorHandler(
 
   if (error instanceof AppError) {
     return response.status(error.statusCode).json({
+      message: error.message,
+    });
+  }
+
+  if (error instanceof DatabaseError) {
+    return response.status(500).json({
       message: error.message,
     });
   }

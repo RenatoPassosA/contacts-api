@@ -6,7 +6,7 @@ export type Contact = {
   updatedAt: Date;
 };
 
-export type CreateContactDto  = {
+export type CreateContactDto = {
   nome: string;
   telefone: string;
 };

@@ -1,5 +1,5 @@
 import { app } from "./app.js";
-import { checkDatabaseConnection } from "./config/database.js";
+import { checkDatabaseConnection } from "./infra/mysql/database.js";
 import { env } from "./config/env.js";
 
 async function bootstrap() {

@@ -1,18 +1,13 @@
 import { jest } from "@jest/globals";
 
-import {
-  CreateContactUseCase,
-  DeleteContactUseCase,
-  ListContactsUseCase,
-  UpdateContactUseCase,
-} from "../modules/contacts/usecases.js";
+import { ContactUseCase } from "../application/usecases/usecases.js";
 
-import type { ContactRepository } from "../modules/contacts/repository.js";
+import type { ContactRepository } from "../domain/repository.js";
 import type {
   Contact,
   CreateContactDto,
   UpdateContactDto,
-} from "../modules/contacts/types.js";
+} from "../domain/types.js";
 
 const mockContact: Contact = {
   id: 1,
@@ -50,96 +45,96 @@ function makeMockRepository(
   };
 }
 
-describe("CreateContactUseCase", () => {
-  it("cria e retorna o contato", async () => {
-    const repository = makeMockRepository();
-    const usecase = new CreateContactUseCase(repository);
+describe("ContactUseCase", () => {
+  describe("create", () => {
+    it("cria e retorna o contato", async () => {
+      const repository = makeMockRepository();
+      const usecase = new ContactUseCase(repository);
 
-    const result = await usecase.execute({
-      nome: "João Silva",
-      telefone: "11999999999",
+      const result = await usecase.create({
+        nome: "João Silva",
+        telefone: "11999999999",
+      });
+
+      expect(repository.create).toHaveBeenCalledWith({
+        nome: "João Silva",
+        telefone: "11999999999",
+      });
+
+      expect(result).toEqual(mockContact);
     });
-
-    expect(repository.create).toHaveBeenCalledWith({
-      nome: "João Silva",
-      telefone: "11999999999",
-    });
-
-    expect(result).toEqual(mockContact);
-  });
-});
-
-describe("ListContactsUseCase", () => {
-  it("retorna lista de contatos", async () => {
-    const repository = makeMockRepository();
-    const usecase = new ListContactsUseCase(repository);
-
-    const result = await usecase.execute();
-
-    expect(repository.findAll).toHaveBeenCalled();
-    expect(result).toEqual([mockContact]);
-  });
-});
-
-describe("UpdateContactUseCase", () => {
-  it("atualiza e retorna o contato", async () => {
-    const repository = makeMockRepository();
-    const usecase = new UpdateContactUseCase(repository);
-
-    const result = await usecase.execute(1, {
-      nome: "João Santos",
-    });
-
-    expect(repository.findById).toHaveBeenCalledWith(1);
-
-    expect(repository.update).toHaveBeenCalledWith(1, {
-      nome: "João Santos",
-    });
-
-    expect(result.nome).toBe("João Santos");
   });
 
-  it("lança erro se contato não existe", async () => {
-    const repository = makeMockRepository({
-      findById: jest.fn(async (_id: number) => null),
+  describe("list", () => {
+    it("retorna lista de contatos", async () => {
+      const repository = makeMockRepository();
+      const usecase = new ContactUseCase(repository);
+
+      const result = await usecase.read();
+
+      expect(repository.findAll).toHaveBeenCalled();
+      expect(result).toEqual([mockContact]);
     });
+  });
 
-    const usecase = new UpdateContactUseCase(repository);
+  describe("update", () => {
+    it("atualiza e retorna o contato", async () => {
+      const repository = makeMockRepository();
+      const usecase = new ContactUseCase(repository);
 
-    await expect(
-      usecase.execute(99, {
+      const result = await usecase.update(1, {
         nome: "João Santos",
-      })
-    ).rejects.toThrow("Contato não encontrado.");
+      });
 
-    expect(repository.findById).toHaveBeenCalledWith(99);
-    expect(repository.update).not.toHaveBeenCalled();
-  });
-});
+      expect(repository.findById).toHaveBeenCalledWith(1);
 
-describe("DeleteContactUseCase", () => {
-  it("deleta o contato existente", async () => {
-    const repository = makeMockRepository();
-    const usecase = new DeleteContactUseCase(repository);
+      expect(repository.update).toHaveBeenCalledWith(1, {
+        nome: "João Santos",
+      });
 
-    await usecase.execute(1);
-
-    expect(repository.findById).toHaveBeenCalledWith(1);
-    expect(repository.delete).toHaveBeenCalledWith(1);
-  });
-
-  it("lança erro se contato não existe", async () => {
-    const repository = makeMockRepository({
-      findById: jest.fn(async (_id: number) => null),
+      expect(result.nome).toBe("João Santos");
     });
 
-    const usecase = new DeleteContactUseCase(repository);
+    it("lança erro se contato não existe", async () => {
+      const repository = makeMockRepository({
+        findById: jest.fn(async (_id: number) => null),
+      });
 
-    await expect(usecase.execute(99)).rejects.toThrow(
-      "Contato não encontrado."
-    );
+      const usecase = new ContactUseCase(repository);
 
-    expect(repository.findById).toHaveBeenCalledWith(99);
-    expect(repository.delete).not.toHaveBeenCalled();
+      await expect(
+        usecase.update(99, {
+          nome: "João Santos",
+        })
+      ).rejects.toThrow("Contato não encontrado.");
+
+      expect(repository.findById).toHaveBeenCalledWith(99);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("delete", () => {
+    it("deleta o contato existente", async () => {
+      const repository = makeMockRepository();
+      const usecase = new ContactUseCase(repository);
+
+      await usecase.delete(1);
+
+      expect(repository.delete).toHaveBeenCalledWith(1);
+    });
+
+    it("lança erro se contato não existe", async () => {
+      const repository = makeMockRepository({
+        delete: jest.fn(async (_id: number) => false),
+      });
+
+      const usecase = new ContactUseCase(repository);
+
+      await expect(usecase.delete(99)).rejects.toThrow(
+        "Contato não encontrado."
+      );
+
+      expect(repository.delete).toHaveBeenCalledWith(99);
+    });
   });
 });
