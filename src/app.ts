@@ -6,14 +6,14 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/health", (request, response) => {
+app.get("/health", (_request, response) => {
   response.status(200).json({
     status: "ok",
     service: "contatos-api",
   });
 });
 
-app.get("/", (request, response) => {
+app.get("/", (_request, response) => {
   response.status(200).json({
     message: "Contacts API is running.",
   });

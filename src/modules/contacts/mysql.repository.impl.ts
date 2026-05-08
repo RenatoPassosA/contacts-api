@@ -34,7 +34,7 @@ export class MySqlContactRepository implements ContactRepository {
       throw new Error("Contato não encontrado após a criação.");
     }
 
-  return contact;
+    return contact;
   }
 
   async findAll(): Promise<Contact[]> {
