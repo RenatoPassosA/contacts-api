@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { UpdateContactDto } from "./types.js";
 
 function isValidFullName(value: string) {
   const words = value.trim().split(/\s+/);
@@ -23,13 +24,13 @@ function isValidPhone(value: string) {
 }
 
 export const createContactSchema = z.object({
-  name: z
+  nome: z
     .string()
     .trim()
     .refine(isValidFullName, {
       message: "O nome deve conter pelo menos duas palavras com no mínimo 3 letras cada.",
     }),
-    phone: z
+    telefone: z
       .string()
       .trim()
       .min(1, "O telefone é obrigatório.")
@@ -41,14 +42,14 @@ export const createContactSchema = z.object({
 
 export const updateContactSchema = z
   .object({
-    name: z
+    nome: z
       .string()
       .trim()
       .refine(isValidFullName, {
         message: "O nome deve conter pelo menos duas palavras com no mínimo 3 letras cada.",
       })
       .optional(),
-    phone: z
+    telefone: z
       .string()
       .trim()
       .min(1, "O telefone é obrigatório.")
@@ -58,6 +59,12 @@ export const updateContactSchema = z
       })
       .optional(),
   })
-  .refine((data) => data.name !== undefined || data.phone !== undefined, {
+  .refine((data) => data.nome !== undefined || data.telefone !== undefined, {
     message: "Informe pelo menos um campo para atualização.",
+  })
+  .transform((data): UpdateContactDto => {
+    const result: UpdateContactDto = {};
+    if (data.nome !== undefined) result.nome = data.nome;
+    if (data.telefone !== undefined) result.telefone = data.telefone;
+    return result;
   });

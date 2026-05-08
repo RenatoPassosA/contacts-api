@@ -1,17 +1,17 @@
 export type Contact = {
   id: number;
-  name: string;
-  phone: string;
+  nome: string;
+  telefone: string;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export type CreateContactDto  = {
-  name: string;
-  phone: string;
+  nome: string;
+  telefone: string;
 };
 
 export type UpdateContactDto = {
-  name?: string;
-  phone?: string;
+  nome?: string;
+  telefone?: string;
 };
