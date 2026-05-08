@@ -1,0 +1,50 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: contacts-api
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: contacts_user
+      DB_PASSWORD: contacts_password
+      DB_NAME: contacts_api
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - contacts-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: contacts-api-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: contacts_api
+      MYSQL_USER: contacts_user
+      MYSQL_PASSWORD: contacts_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - contacts_mysql_data:/var/lib/mysql
+      - ./src/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - contacts-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  contacts_mysql_data:
+
+networks:
+  contacts-network:
+    driver: bridge
