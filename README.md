@@ -1,6 +1,8 @@
 # contacts-api
 
-API REST para gerenciamento de contatos, construída com Node.js, Express e TypeScript, utilizando MySQL como banco de dados.
+API REST para gerenciamento de contatos, desenvolvida com Node.js, Express, TypeScript e MySQL.
+
+A aplicação permite criar, listar, atualizar e excluir contatos, aplicando validações nos dados de entrada e persistindo as informações em um banco de dados MySQL.
 
 ## Funcionalidades
 
@@ -8,127 +10,97 @@ API REST para gerenciamento de contatos, construída com Node.js, Express e Type
 - Listar contatos
 - Atualizar contato
 - Excluir contato
-- Validar dados de entrada
-- Persistir contatos em banco de dados MySQL
-- Executar a aplicação com Docker
-- Subir API e banco MySQL com Docker Compose
-- Popular o banco com dados de exemplo via seed
-- Automatizar comandos comuns com Makefile
+- Validar nome e telefone
+- Persistir contatos em banco MySQL
+- Executar localmente ou com Docker
+- Executar testes automatizados
 
-## Tecnologias
+## Tecnologias utilizadas
 
-- Node.js + TypeScript
+- Node.js
+- TypeScript
 - Express
+- MySQL
 - MySQL2
 - Zod
 - dotenv
-- tsx
 - Jest
 - Docker
 - Docker Compose
 - Makefile
 
-## Pré-requisitos
-
-O projeto pode ser executado de duas formas:
-
-1. Localmente, usando Node.js e MySQL instalados na máquina.
-2. Com Docker, usando Docker Compose para subir a API e o banco MySQL.
-
-### Para execução local
-
-É necessário ter instalado:
-
-- Node.js 18+
-- npm
-- MySQL 8+
-
-### Para execução com Docker
-
-É necessário ter instalado:
-
-- Docker
-- Docker Compose v2, disponível pelo comando:
-
-```bash
-docker compose version
-```
-
-> Observação: em algumas instalações antigas, o comando pode ser `docker-compose`. Este projeto utiliza por padrão `docker compose`.
-
-## Estrutura do projeto
+## Estrutura principal
 
 ```txt
 src/
-  __tests__/
+  adapters/http/
+  application/usecases/
   config/
   database/
-    init.sql
-    seed.sql
+  domain/
   errors/
+  infra/mysql/
   middlewares/
-  modules/
-    contacts/
-      controller.ts
-      mysql.repository.impl.ts
-      repository.ts
-      routes.ts
-      schema.ts
-      types.ts
-      usecases.ts
   app.ts
   server.ts
-
-Dockerfile
-docker-compose.yml
-Makefile
-.dockerignore
-.env.example
 ```
 
 ## Configuração local
 
-### 1. Clone o repositório e instale as dependências
+### 1. Clone o repositório
 
 ```bash
 git clone https://github.com/RenatoPassosA/contacts-api
 cd contacts-api
+```
+
+### 2. Instale as dependências
+
+```bash
 npm install
 ```
 
-### 2. Configure as variáveis de ambiente
+### 3. Configure o `.env`
 
-Crie um arquivo `.env` na raiz do projeto com base no arquivo `.env.example`:
+Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
 
 ```env
 PORT=3000
 
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
+DB_USER=seu_usuario_mysql
+DB_PASSWORD=sua_senha_mysql
 DB_NAME=contacts_api
 ```
 
-Ajuste os valores conforme a configuração do seu MySQL local.
+O usuário informado em `DB_USER` precisa existir no MySQL e possuir permissão de acesso ao banco `contacts_api`.
 
-### 3. Configure o banco de dados local
+O arquivo `.env` não deve ser versionado.
 
-Para criar o banco de dados e a tabela `contacts`, execute:
+## Banco de dados
+
+O projeto possui um script para criar o banco de dados e a tabela `contacts`:
+
+```txt
+src/database/init.sql
+```
+
+No Linux/WSL, caso o MySQL utilize autenticação via `sudo`, execute:
 
 ```bash
 sudo mysql -N < src/database/init.sql
 ```
 
-Caso prefira executar com um usuário específico do MySQL, utilize:
+Ou, usando um usuário MySQL com permissão para criar banco de dados e tabelas:
 
 ```bash
-mysql -u seu_usuario -p -N < src/database/init.sql
+mysql -u usuario_admin_mysql -p -N < src/database/init.sql
 ```
 
-O script cria o banco `contacts_api`, caso ele ainda não exista, e também cria a tabela `contacts`, caso ela ainda não exista.
+O script cria o banco `contacts_api`, caso ele não exista, e cria a tabela `contacts`, caso ela não exista.
 
-A tabela criada possui a seguinte estrutura:
+Estrutura da tabela:
 
 ```sql
 CREATE TABLE IF NOT EXISTS contacts (
@@ -142,17 +114,10 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 ## Rodando localmente
 
-### Desenvolvimento
+Para iniciar a aplicação em modo desenvolvimento:
 
 ```bash
 npm run dev
-```
-
-### Produção
-
-```bash
-npm run build
-npm start
 ```
 
 A API ficará disponível em:
@@ -161,18 +126,16 @@ A API ficará disponível em:
 http://localhost:3000
 ```
 
+Para compilar e rodar a versão de produção:
+
+```bash
+npm run build
+npm start
+```
+
 ## Rodando com Docker
 
-O projeto possui um `Dockerfile` para build da API e um `docker-compose.yml` para subir o ecossistema completo com:
-
-- API Node.js/Express
-- Banco MySQL 8.4
-- Volume persistente para o banco
-- Network interna entre API e MySQL
-- Healthcheck do MySQL
-- Script de inicialização do banco
-
-### Subir API e banco
+Também é possível subir a API e o banco MySQL com Docker Compose.
 
 ```bash
 make up-build
@@ -180,104 +143,59 @@ make up-build
 
 Esse comando constrói a imagem da API e sobe os containers em segundo plano.
 
-Depois, verifique se os containers estão rodando:
+Verifique os containers:
 
 ```bash
 make ps
 ```
 
-A saída esperada deve conter os serviços `api` e `mysql` rodando. O MySQL deve aparecer como `healthy`.
-
-### Testar se a API está no ar
-
-```bash
-curl -i http://localhost:3000/health
-```
-
-Resposta esperada:
-
-```json
-{"status":"ok","service":"contatos-api"}
-```
-
-### Listar contatos
-
-Logo após subir o ambiente do zero, a tabela pode estar vazia:
-
-```bash
-curl -i http://localhost:3000/contatos
-```
-
-Resposta esperada antes do seed:
-
-```json
-[]
-```
-
-## Portas no Docker
-
-No ambiente Docker, a API fica disponível em:
+A API ficará disponível em:
 
 ```txt
 http://localhost:3000
 ```
 
-O MySQL fica disponível externamente na porta `3307`:
+No Docker, o MySQL fica disponível externamente em:
 
 ```txt
 localhost:3307
 ```
 
-Dentro da rede Docker, a API acessa o banco usando:
+Dentro da rede Docker, a API acessa o banco com:
 
 ```env
 DB_HOST=mysql
 DB_PORT=3306
+DB_USER=contacts_user
+DB_PASSWORD=contacts_password
+DB_NAME=contacts_api
 ```
 
-Isso evita conflito com um MySQL local que já esteja usando a porta `3306`.
-
-## Populando o banco com seed
-
-O projeto possui um arquivo de seed em:
-
-```txt
-src/database/seed.sql
-```
-
-Para popular o banco com dados de exemplo, execute:
+Para derrubar os containers:
 
 ```bash
-make db-seed
+make down
 ```
 
-Depois, liste os contatos:
+Para derrubar os containers e remover o volume do banco:
 
 ```bash
-curl -i http://localhost:3000/contatos
+make clean
 ```
 
-Resposta esperada: uma lista com contatos cadastrados.
+Atenção: `make clean` remove os dados salvos no banco.
 
-Também é possível conferir diretamente no banco:
+## Makefile
 
-```bash
-docker compose exec mysql mysql -ucontacts_user -pcontacts_password contacts_api -e "SELECT * FROM contacts;"
-```
+O projeto possui um `Makefile` para facilitar a execução dos comandos.
 
-> Observação: o MySQL pode exibir o aviso `Using a password on the command line interface can be insecure`. Para este ambiente local de desenvolvimento, esse aviso não impede o funcionamento.
-
-## Comandos do Makefile
-
-O projeto possui um `Makefile` para facilitar os comandos mais comuns.
-
-### Ver comandos disponíveis
+Ver comandos disponíveis:
 
 ```bash
 make help
 ```
 
-### Comandos locais
+Comandos principais:
 
 ```bash
 make install
@@ -295,13 +213,13 @@ Roda a API localmente em modo desenvolvimento.
 make build
 ```
 
-Compila o projeto TypeScript.
+Compila o projeto.
 
 ```bash
 make start
 ```
 
-Roda a API compilada.
+Roda a versão compilada.
 
 ```bash
 make test
@@ -309,19 +227,11 @@ make test
 
 Executa os testes automatizados.
 
-### Comandos Docker
-
-```bash
-make up
-```
-
-Sobe os containers.
-
 ```bash
 make up-build
 ```
 
-Rebuilda a imagem da API e sobe os containers.
+Rebuilda e sobe a API e o banco com Docker.
 
 ```bash
 make down
@@ -330,40 +240,10 @@ make down
 Derruba os containers.
 
 ```bash
-make restart
-```
-
-Reinicia o ambiente Docker.
-
-```bash
-make ps
-```
-
-Lista os containers do projeto.
-
-```bash
 make logs
 ```
 
-Mostra os logs de todos os containers.
-
-```bash
-make logs-api
-```
-
-Mostra os logs da API.
-
-```bash
-make logs-db
-```
-
-Mostra os logs do MySQL.
-
-```bash
-make shell
-```
-
-Abre um terminal dentro do container da API.
+Mostra os logs dos containers.
 
 ```bash
 make db-shell
@@ -377,125 +257,41 @@ make db-seed
 
 Popula o banco com dados de exemplo.
 
-```bash
-make clean
+## Seed do banco
+
+O projeto possui um script opcional para popular a tabela `contacts`:
+
+```txt
+src/database/seed.sql
 ```
 
-Derruba os containers e remove os volumes do banco.
-
-```bash
-make prune
-```
-
-Remove recursos Docker não utilizados.
-
-## Rotas
-
-| Método   | Rota             | Descrição                    |
-|----------|------------------|------------------------------|
-| `GET`    | `/health`        | Verifica se a API está no ar |
-| `POST`   | `/contatos`      | Cria um novo contato         |
-| `GET`    | `/contatos`      | Lista todos os contatos      |
-| `PATCH`  | `/contatos/:id`  | Atualiza um contato          |
-| `DELETE` | `/contatos/:id`  | Remove um contato            |
-
-## Exemplos de uso
-
-### Criar contato
+Com Docker:
 
 ```bash
-curl -X POST http://localhost:3000/contatos \
-  -H "Content-Type: application/json" \
-  -d '{"nome": "Joao Silva", "telefone": "11999999999"}'
+make db-seed
 ```
 
-**Resposta 201:**
-
-```json
-{
-  "id": 1,
-  "nome": "Joao Silva",
-  "telefone": "11999999999",
-  "createdAt": "2026-05-07T13:55:24.000Z",
-  "updatedAt": "2026-05-07T13:55:24.000Z"
-}
-```
-
-### Listar contatos
+Localmente:
 
 ```bash
-curl http://localhost:3000/contatos
+mysql -u seu_usuario_mysql -p contacts_api < src/database/seed.sql
 ```
 
-**Resposta 200:**
-
-```json
-[
-  {
-    "id": 1,
-    "nome": "Joao Silva",
-    "telefone": "11999999999",
-    "createdAt": "2026-05-07T13:55:24.000Z",
-    "updatedAt": "2026-05-07T13:55:24.000Z"
-  }
-]
-```
-
-### Atualizar contato
+Ou, no Linux/WSL com autenticação via `sudo`:
 
 ```bash
-curl -X PATCH http://localhost:3000/contatos/1 \
-  -H "Content-Type: application/json" \
-  -d '{"nome": "Joao Santos"}'
+sudo mysql contacts_api < src/database/seed.sql
 ```
 
-**Resposta 200:**
+## Testes
 
-```json
-{
-  "id": 1,
-  "nome": "Joao Santos",
-  "telefone": "11999999999",
-  "createdAt": "2026-05-07T13:55:24.000Z",
-  "updatedAt": "2026-05-07T13:56:18.000Z"
-}
-```
-
-### Remover contato
-
-```bash
-curl -X DELETE http://localhost:3000/contatos/1
-```
-
-**Resposta:** `204 No Content`
-
-## Validações
-
-### Nome
-
-- Obrigatório
-- Deve conter no mínimo duas palavras
-- Cada palavra deve ter pelo menos 3 letras
-
-### Telefone
-
-- Obrigatório
-- Aceita os formatos:
-  - `11999999999`
-  - `(11) 99999-9999`
-  - `+55 11 99999-9999`
-- Deve ter 10 ou 11 dígitos, sem considerar o DDI
-- Deve ter no máximo 20 caracteres
-
-## Testes automatizados
-
-Para executar os testes:
+Para executar os testes automatizados:
 
 ```bash
 npm test
 ```
 
-Ou usando Makefile:
+Ou:
 
 ```bash
 make test
@@ -505,111 +301,5 @@ Resultado esperado:
 
 ```txt
 Test Suites: 3 passed, 3 total
-Tests:       25 passed, 25 total
+Tests:       27 passed, 27 total
 ```
-
-## Testes manuais com curl
-
-Com a API rodando, teste nesta ordem.
-
-### 1. Health check
-
-```bash
-curl http://localhost:3000/health
-```
-
-Esperado:
-
-```json
-{"status":"ok","service":"contatos-api"}
-```
-
-### 2. Criar contato
-
-```bash
-curl -i -X POST http://localhost:3000/contatos \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Joao Silva","telefone":"11999999999"}'
-```
-
-Esperado: status `201` e o contato criado.
-
-### 3. Listar contatos
-
-```bash
-curl -i http://localhost:3000/contatos
-```
-
-Esperado: status `200` e uma lista contendo os contatos cadastrados.
-
-### 4. Atualizar contato
-
-Use o `id` retornado no cadastro. Exemplo com `id` igual a `1`:
-
-```bash
-curl -i -X PATCH http://localhost:3000/contatos/1 \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Joao Santos","telefone":"11988887777"}'
-```
-
-Esperado: status `200` e contato atualizado.
-
-### 5. Excluir contato
-
-```bash
-curl -i -X DELETE http://localhost:3000/contatos/1
-```
-
-Esperado:
-
-```txt
-HTTP/1.1 204 No Content
-```
-
-### 6. Testar nome inválido
-
-```bash
-curl -i -X POST http://localhost:3000/contatos \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Joao","telefone":"11999999999"}'
-```
-
-Esperado: status `400`.
-
-### 7. Testar telefone inválido
-
-```bash
-curl -i -X POST http://localhost:3000/contatos \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Joao Silva","telefone":"123"}'
-```
-
-Esperado: status `400`.
-
-### 8. Testar ID inválido
-
-```bash
-curl -i -X PATCH http://localhost:3000/contatos/abc \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Joao Santos"}'
-```
-
-Esperado: status `400`.
-
-### 9. Testar contato inexistente
-
-```bash
-curl -i -X DELETE http://localhost:3000/contatos/99999
-```
-
-Esperado: status `404`.
-
-## Observações importantes
-
-- No Docker, a API acessa o banco pelo host `mysql`, e não por `localhost`.
-- No Docker, o MySQL é exposto externamente em `localhost:3307`.
-- Localmente, o `.env` pode usar `DB_HOST=localhost` e `DB_PORT=3306`.
-- O script `init.sql` cria o banco e a tabela.
-- O script `seed.sql` popula o banco com dados de exemplo.
-- O comando `make clean` remove o volume do banco; portanto, os dados serão apagados.
-- Caso a porta `3306` já esteja em uso na máquina local, isso não afeta o Docker, pois o MySQL do Compose usa a porta externa `3307`.
